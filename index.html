@@ -133,11 +133,8 @@
     const IconRight = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
     const IconPlus = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
     const IconTrash = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
-    const IconCloudSync = ({ syncing }) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={syncing ? "animate-spin text-pink-500" : "text-emerald-500"}>
-        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="M12 13v-3"/><path d="m9 12 3-3 3 3"/>
-      </svg>
-    );
+    const IconLock = ({ size = 22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+    const IconSettings = ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
 
     const formatDate = (date) => {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -162,6 +159,187 @@
       youtube: []
     };
 
+    // --- 비밀번호 잠금 화면 ---
+    const PinLockView = ({ onUnlock, savedPin, onSetPin }) => {
+      const [inputPin, setInputPin] = useState('');
+      const [errorMsg, setErrorMsg] = useState('');
+      const isFirstSetup = !savedPin;
+
+      const handleNumberClick = (num) => {
+        if (inputPin.length < 4) {
+          const next = inputPin + num;
+          setInputPin(next);
+          setErrorMsg('');
+
+          if (next.length === 4) {
+            if (isFirstSetup) {
+              onSetPin(next);
+              onUnlock();
+            } else {
+              if (next === savedPin) {
+                onUnlock();
+              } else {
+                setErrorMsg('비밀번호가 일치하지 않습니다.');
+                setTimeout(() => setInputPin(''), 500);
+              }
+            }
+          }
+        }
+      };
+
+      const handleDelete = () => setInputPin(prev => prev.slice(0, -1));
+
+      return (
+        <div className="flex flex-col items-center justify-between h-full py-12 px-6 z-30">
+          <div className="text-center mt-6">
+            <div className="w-16 h-16 bg-gradient-to-tr from-pink-400 to-purple-500 rounded-3xl flex items-center justify-center text-white shadow-lg shadow-purple-200 mx-auto mb-4">
+              <IconLock size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">
+              {isFirstSetup ? '새 비밀번호 4자리 설정' : '비밀번호를 입력하세요'}
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              {isFirstSetup ? '앱 진입 시 사용할 4자리 숫자를 입력해 주세요.' : '소중한 기록 보호를 위한 보안 잠금'}
+            </p>
+          </div>
+
+          <div className="my-6">
+            <div className="flex justify-center gap-4">
+              {[0, 1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
+                    i < inputPin.length ? 'bg-purple-500 border-purple-500 scale-110' : 'border-slate-300 bg-white'
+                  }`}
+                />
+              ))}
+            </div>
+            {errorMsg && <p className="text-xs text-rose-500 text-center font-semibold mt-4 animate-bounce">{errorMsg}</p>}
+          </div>
+
+          {/* 숫자 패드 */}
+          <div className="grid grid-cols-3 gap-5 w-full max-w-[280px]">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <button
+                key={num}
+                onClick={() => handleNumberClick(String(num))}
+                className="w-16 h-16 rounded-full bg-white/90 backdrop-blur-md shadow-md text-xl font-bold text-slate-700 active:scale-95 transition-all border border-purple-50 hover:bg-purple-50"
+              >
+                {num}
+              </button>
+            ))}
+            <div />
+            <button
+              onClick={() => handleNumberClick('0')}
+              className="w-16 h-16 rounded-full bg-white/90 backdrop-blur-md shadow-md text-xl font-bold text-slate-700 active:scale-95 transition-all border border-purple-50 hover:bg-purple-50"
+            >
+              0
+            </button>
+            <button
+              onClick={handleDelete}
+              className="w-16 h-16 rounded-full bg-slate-100 text-slate-500 text-sm font-semibold active:scale-95 transition-all flex items-center justify-center"
+            >
+              ←
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // --- 월간 달력 컴포넌트 ---
+    const CalendarView = ({ currentDate, onSelectDate, records }) => {
+      const [viewDate, setViewDate] = useState(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1));
+
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+      const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+      const daysArray = [];
+      for (let i = 0; i < firstDayIndex; i++) {
+        daysArray.push(null);
+      }
+      for (let i = 1; i <= totalDays; i++) {
+        daysArray.push(i);
+      }
+
+      const todayKey = formatDate(new Date());
+
+      return (
+        <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-xl shadow-purple-100/50 border border-white/80 space-y-4">
+          <div className="flex justify-between items-center px-2">
+            <button onClick={prevMonth} className="p-2 rounded-full hover:bg-purple-50 text-slate-500 transition-colors">
+              <IconLeft />
+            </button>
+            <h2 className="text-lg font-bold text-slate-800">
+              {year}년 {month + 1}월
+            </h2>
+            <button onClick={nextMonth} className="p-2 rounded-full hover:bg-purple-50 text-slate-500 transition-colors">
+              <IconRight />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-1">
+            <span className="text-rose-400">일</span>
+            <span>월</span>
+            <span>화</span>
+            <span>수</span>
+            <span>목</span>
+            <span>금</span>
+            <span className="text-indigo-400">토</span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+            {daysArray.map((day, idx) => {
+              if (!day) return <div key={`empty-${idx}`} className="h-12" />;
+
+              const thisDateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const dayData = records[thisDateKey];
+              const isToday = thisDateKey === todayKey;
+              const isSelected = thisDateKey === formatDate(currentDate);
+
+              // 해당 날짜에 작성된 기록 유무 확인
+              const hasRecords = dayData && (
+                dayData.health?.supplements || dayData.health?.bpMeds || dayData.health?.others ||
+                dayData.study?.length > 0 || dayData.reading?.length > 0 ||
+                dayData.exercise?.length > 0 || dayData.review?.today || dayData.review?.tomorrow ||
+                dayData.other?.length > 0 || dayData.youtube?.length > 0
+              );
+
+              return (
+                <button
+                  key={day}
+                  onClick={() => onSelectDate(new Date(year, month, day))}
+                  className={`h-12 rounded-2xl flex flex-col items-center justify-between p-1 transition-all relative ${
+                    isSelected ? 'bg-gradient-to-b from-purple-500 to-indigo-500 text-white shadow-md shadow-purple-200 scale-105 z-10' :
+                    isToday ? 'bg-pink-50 text-pink-600 border border-pink-200' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <span className={`text-xs font-bold ${isSelected ? 'text-white' : (idx % 7 === 0 ? 'text-rose-500' : idx % 7 === 6 ? 'text-indigo-500' : '')}`}>
+                    {day}
+                  </span>
+                  
+                  {/* 기분 이모티콘 또는 점 표식 */}
+                  <div className="h-5 flex items-center justify-center">
+                    {dayData?.mood ? (
+                      <span className="text-sm leading-none">{dayData.mood}</span>
+                    ) : hasRecords ? (
+                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-purple-400'}`} />
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    // --- 1. 건강 관리 뷰 ---
     const HealthView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || { supplements: false, bpMeds: false, others: false, othersNote: '' });
       const toggle = (field) => setData(prev => ({ ...prev, [field]: !prev[field] }));
@@ -170,7 +348,7 @@
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-pink-100 group-hover:bg-pink-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -202,6 +380,7 @@
       );
     };
 
+    // --- 2. 학습 기록 뷰 ---
     const StudyView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || []);
       const addStudy = () => setData(prev => [...prev, { title: '', time: '', note: '' }]);
@@ -216,7 +395,7 @@
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-indigo-100 group-hover:bg-indigo-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <div className="flex justify-between items-center mb-6">
@@ -245,6 +424,7 @@
       );
     };
 
+    // --- 3. 독서 활동 뷰 ---
     const ReadingView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || []);
       const addReading = () => setData(prev => [...prev, { title: '', author: '', pages: '', quote: '', reflection: '' }]);
@@ -259,7 +439,7 @@
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-emerald-100 group-hover:bg-emerald-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <div className="flex justify-between items-center mb-6">
@@ -292,6 +472,7 @@
       );
     };
 
+    // --- 4. 운동 기록 뷰 ---
     const ExerciseView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || []);
       const exerciseTypes = ['헬스', '등산', '러닝', '자전거', '기타'];
@@ -307,7 +488,7 @@
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-orange-100 group-hover:bg-orange-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <div className="flex justify-between items-center mb-6">
@@ -344,13 +525,14 @@
       );
     };
 
+    // --- 5. 하루 정리 뷰 ---
     const ReviewView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || { today: '', tomorrow: '' });
       return (
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-purple-100 group-hover:bg-purple-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -373,6 +555,7 @@
       );
     };
 
+    // --- 6. 기타 활동 뷰 ---
     const OtherView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || []);
       const activityTags = ['청소', '세탁', '장보기', '외부 활동', '가족모임', '기타'];
@@ -383,7 +566,7 @@
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-teal-100 group-hover:bg-teal-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <h2 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
@@ -419,6 +602,7 @@
       );
     };
 
+    // --- 7. 유튜브 시청 뷰 ---
     const YoutubeView = ({ initialData, onSave, onBack }) => {
       const [data, setData] = useState(initialData || []);
       const addYoutube = () => setData(prev => [...prev, { channel: '', title: '', note: '' }]);
@@ -428,7 +612,7 @@
         <div className="flex flex-col h-full space-y-6">
           <button onClick={onBack} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors group">
             <div className="p-1.5 rounded-full bg-white shadow-sm border border-rose-100 group-hover:bg-rose-50 transition-colors"><IconLeft /></div>
-            뒤로가기
+            취소 및 뒤로가기
           </button>
           <div className="flex-1 space-y-6">
             <div className="flex justify-between items-center mb-6">
@@ -467,75 +651,131 @@
       );
     };
 
+    // --- 설정 및 구글 스프레드시트 연동 모달 ---
+    const SettingsModal = ({ isOpen, onClose, pin, onSavePin, sheetUrl, onSaveSheetUrl }) => {
+      const [newPin, setNewPin] = useState(pin || '');
+      const [urlInput, setUrlInput] = useState(sheetUrl || '');
+      const [copied, setCopied] = useState(false);
+
+      if (!isOpen) return null;
+
+      const sampleGasCode = `function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([data.date, data.mood, JSON.stringify(data)]);
+  return ContentService.createTextOutput("Success");
+}`;
+
+      const handleCopyCode = () => {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = sampleGasCode;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (e) {}
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto no-scrollbar">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <IconSettings /> 앱 설정 & 구글 연동
+            </h3>
+
+            {/* 비밀번호 변경 */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500">🔒 비밀번호 변경 (4자리)</label>
+              <input
+                type="password"
+                maxLength={4}
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value)}
+                placeholder="새 4자리 숫자"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-purple-400"
+              />
+            </div>
+
+            {/* 구글 스프레드시트 웹앱 URL */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500">📊 구글 스프레드시트 Web App URL</label>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://script.google.com/macros/s/.../exec"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-purple-400"
+              />
+              <p className="text-[11px] text-slate-400">
+                저장 버튼을 누를 때마다 입력된 웹앱 URL로 데이터가 전송됩니다.
+              </p>
+            </div>
+
+            {/* Google Apps Script 샘플 코드 */}
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-bold text-purple-600">Google Apps Script 예시 코드</span>
+                <button onClick={handleCopyCode} className="text-[11px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-md font-semibold">
+                  {copied ? '복사됨!' : '코드 복사'}
+                </button>
+              </div>
+              <pre className="text-[10px] text-slate-600 overflow-x-auto p-2 bg-slate-100 rounded-lg font-mono">
+                {sampleGasCode}
+              </pre>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  if (newPin.length === 4) onSavePin(newPin);
+                  onSaveSheetUrl(urlInput);
+                  onClose();
+                }}
+                className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-bold text-sm shadow-md shadow-purple-200"
+              >
+                저장하기
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     function App() {
+      const [isUnlocked, setIsUnlocked] = useState(false);
+      const [savedPin, setSavedPin] = useState(() => localStorage.getItem('vibe_app_pin') || '');
+      const [sheetUrl, setSheetUrl] = useState(() => localStorage.getItem('vibe_sheet_url') || '');
+
       const [currentDate, setCurrentDate] = useState(new Date());
       const [records, setRecords] = useState({});
-      const [currentView, setCurrentView] = useState('main');
-      const [dbStatus, setDbStatus] = useState('connecting');
-      const [dbRef, setDbRef] = useState({ db: null, doc: null, setDoc: null, onSnapshot: null, appId: 'default-app' });
+      const [currentView, setCurrentView] = useState('main'); // 'main' | 'detail' | 'health' | 'study' | ...
+      const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
       const dateKey = formatDate(currentDate);
       const todayData = records[dateKey] || defaultDayData;
 
-      useEffect(() => {
-        let unsubscribe = null;
+      // PIN 저장
+      const handleSavePin = (pin) => {
+        setSavedPin(pin);
+        localStorage.setItem('vibe_app_pin', pin);
+      };
 
-        async function initFirebase() {
-          try {
-            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-            const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-            const { getFirestore, doc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+      // 구글 스프레드시트 URL 저장
+      const handleSaveSheetUrl = (url) => {
+        setSheetUrl(url);
+        localStorage.setItem('vibe_sheet_url', url);
+      };
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'vibe-daily-tracker-default';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' 
-              ? JSON.parse(__firebase_config) 
-              : {
-                  apiKey: "demo-key",
-                  authDomain: "demo.firebaseapp.com",
-                  projectId: "demo-project",
-                  storageBucket: "demo.appspot.com",
-                  messagingSenderId: "123456789",
-                  appId: "1:123456789:web:123456"
-                };
-
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-
-            setDbRef({ db, doc, setDoc, onSnapshot, appId });
-
-            const docPath = doc(db, 'artifacts', appId, 'public', 'data', 'tracker_records', dateKey);
-            
-            unsubscribe = onSnapshot(docPath, (docSnap) => {
-              if (docSnap.exists()) {
-                setRecords(prev => ({
-                  ...prev,
-                  [dateKey]: docSnap.data()
-                }));
-              }
-              setDbStatus('synced');
-            }, (error) => {
-              setDbStatus('synced');
-            });
-
-          } catch (err) {
-            setDbStatus('synced');
-          }
-        }
-
-        initFirebase();
-
-        return () => {
-          if (unsubscribe) unsubscribe();
-        };
-      }, [dateKey]);
-
+      // 특정 카테고리 저장 (명확한 저장 버튼 클릭 시에만 수용)
       const updateCategoryData = async (category, data) => {
         const newDayData = {
           ...(records[dateKey] || defaultDayData),
@@ -547,30 +787,28 @@
           [dateKey]: newDayData
         }));
 
-        if (dbRef.db && dbRef.doc && dbRef.setDoc) {
+        // 구글 스프레드시트로 전송 (URL이 등록되어 있다면)
+        if (sheetUrl) {
           try {
-            setDbStatus('saving');
-            const targetDoc = dbRef.doc(dbRef.db, 'artifacts', dbRef.appId, 'public', 'data', 'tracker_records', dateKey);
-            await dbRef.setDoc(targetDoc, newDayData, { merge: true });
-            setDbStatus('synced');
-          } catch (err) {
-            setDbStatus('synced');
-          }
+            fetch(sheetUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                date: dateKey,
+                mood: newDayData.mood,
+                ...newDayData
+              })
+            }).catch(() => {});
+          } catch (e) {}
         }
-      };
-
-      const changeDate = (days) => {
-        const newDate = new Date(currentDate);
-        newDate.setDate(newDate.getDate() + days);
-        setCurrentDate(newDate);
-        setCurrentView('main');
       };
 
       const displayDate = new Intl.DateTimeFormat('ko-KR', { 
         year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
       }).format(currentDate);
 
-      /* 화사하고 조화로운 파스텔컬러 테마 폴더 구성 */
+      /* 파스텔 테마 카테고리 구성 */
       const folders = [
         { id: 'health', title: '건강 관리', icon: IconPill, color: 'bg-gradient-to-tr from-rose-400 to-pink-400 text-white', shadow: 'shadow-pink-200/80 border-rose-200/50' },
         { id: 'study', title: '학습 기록', icon: IconBook, color: 'bg-gradient-to-tr from-indigo-400 to-blue-400 text-white', shadow: 'shadow-indigo-200/80 border-indigo-200/50' },
@@ -596,104 +834,68 @@
 
       const completedCount = folders.filter(f => isFolderCompleted(f.id)).length;
 
-      const getGreeting = () => {
-        const hour = currentDate.getHours();
-        if (hour < 12) return '상쾌하고 포근한 아침이에요';
-        if (hour < 18) return '따스하고 활기찬 오후입니다';
-        return '편안하고 아름다운 저녁 되세요';
-      };
+      // 미잠금 상태이면 잠금 화면 표시
+      if (!isUnlocked) {
+        return (
+          <div className="min-h-screen bg-slate-100 sm:flex sm:justify-center">
+            <div className="w-full max-w-md bg-gradient-to-b from-slate-50 via-pink-50/20 to-purple-50/30 min-h-screen relative shadow-2xl sm:border-x border-slate-200 flex flex-col justify-between overflow-hidden">
+              <PinLockView
+                savedPin={savedPin}
+                onUnlock={() => setIsUnlocked(true)}
+                onSetPin={handleSavePin}
+              />
+            </div>
+          </div>
+        );
+      }
 
       return (
         <div className="min-h-screen bg-slate-100 sm:flex sm:justify-center">
-          {/* 전체 컨테이너: 밝은 백색~파스텔 그라데이션 바탕 */}
           <div className="w-full max-w-md bg-gradient-to-b from-slate-50 via-pink-50/20 to-purple-50/30 min-h-screen relative shadow-2xl sm:border-x border-slate-200 flex flex-col justify-between overflow-hidden">
             
-            {/* 메인 화면 중심에서부터 넓게 퍼져나가는 부드러운 파스텔 오로라 광원 효과 */}
+            {/* 오로라 광원 배경 효과 */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] bg-gradient-to-tr from-pink-200/60 via-purple-200/50 to-indigo-200/60 rounded-full blur-3xl pointer-events-none pastel-pulse" />
             <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] bg-gradient-to-br from-amber-200/40 via-rose-200/50 to-sky-200/50 rounded-full blur-2xl pointer-events-none pastel-aura-1" />
-            <div className="absolute bottom-1/4 right-2 w-64 h-64 bg-teal-200/35 rounded-full blur-3xl pointer-events-none pastel-aura-2" />
 
-            {/* 상단 날짜 네비게이션 & DB 상태 */}
-            <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md pt-6 pb-4 px-6 flex items-center justify-between border-b border-pink-100/60 shadow-xs">
-              <button onClick={() => changeDate(-1)} className="p-2 rounded-full hover:bg-pink-50 text-slate-400 hover:text-slate-700 transition-colors">
-                <IconLeft />
-              </button>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <h1 className="text-base font-extrabold text-slate-800 tracking-tight">{displayDate}</h1>
-                  <IconCloudSync syncing={dbStatus === 'saving'} />
-                </div>
+            {/* 헤더 바 */}
+            <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md pt-5 pb-3 px-6 flex items-center justify-between border-b border-pink-100/60 shadow-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold text-slate-800 tracking-tight">{displayDate}</span>
               </div>
-              <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-pink-50 text-slate-400 hover:text-slate-700 transition-colors">
-                <IconRight />
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 rounded-full hover:bg-purple-50 text-slate-500 transition-colors"
+                title="설정"
+              >
+                <IconSettings />
               </button>
             </header>
 
             <main className="px-6 py-4 flex-1 flex flex-col justify-between z-10 no-scrollbar overflow-y-auto">
-              {currentView === 'main' ? (
-                <div className="flex-1 flex flex-col justify-between py-2">
-                  
-                  {/* 상단 웰컴 바 (파스텔 뱃지) */}
-                  <div className="text-center my-2">
-                    <span className="text-xs font-bold tracking-wider text-purple-600 uppercase bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-purple-100 shadow-sm shadow-purple-100/50">
-                      {getGreeting()} ✨
+              
+              {/* 메인 화면: 달력 + 기분 이모지 선택 */}
+              {currentView === 'main' && (
+                <div className="flex-1 flex flex-col justify-between space-y-4 py-2">
+                  <div className="text-center">
+                    <span className="text-xs font-bold tracking-wider text-purple-600 uppercase bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-purple-100 shadow-sm">
+                      원하는 날짜를 선택하여 일상을 기록하세요 ✨
                     </span>
                   </div>
 
-                  {/* 중앙 원형 오비탈 대시보드 (파스텔 방사형 레이아웃) */}
-                  <div className="relative w-full aspect-square max-w-[320px] max-h-[320px] mx-auto my-auto flex items-center justify-center">
-                    
-                    {/* 은은한 회전 빛의 고리 */}
-                    <div className="absolute w-[220px] h-[220px] rounded-full border border-dashed border-indigo-300/60 animate-spin-slow" />
-                    <div className="absolute w-[260px] h-[260px] rounded-full border border-pink-200/50" />
-                    <div className="absolute w-[300px] h-[300px] rounded-full border border-purple-100/60" />
+                  {/* 월간 달력 */}
+                  <CalendarView
+                    currentDate={currentDate}
+                    records={records}
+                    onSelectDate={(selectedDate) => {
+                      setCurrentDate(selectedDate);
+                      setCurrentView('detail');
+                    }}
+                  />
 
-                    {/* 중앙 대시보드 코어 (파스텔 글래스모피즘) */}
-                    <div className="z-10 text-center flex flex-col items-center justify-center p-4 rounded-full bg-white/90 backdrop-blur-xl shadow-xl shadow-purple-200/60 border border-purple-100 w-32 h-32 hover:scale-105 transition-transform duration-300">
-                      <span className="text-3xl font-black text-slate-800 tracking-tight">{completedCount}<span className="text-sm font-bold text-slate-400">/7</span></span>
-                      <span className="text-[11px] font-bold text-indigo-500/80 mt-0.5">오늘의 기록</span>
-                      <div className="w-12 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 transition-all duration-500" style={{ width: `${(completedCount / 7) * 100}%` }} />
-                      </div>
-                    </div>
-
-                    {/* 7개 파스텔 아이콘 버튼 원형 배치 */}
-                    {folders.map((folder, index) => {
-                      const IconComponent = folder.icon;
-                      const total = folders.length;
-                      const angle = (index * (360 / total) - 90) * (Math.PI / 180);
-                      const radius = 120;
-                      const x = Math.round(Math.cos(angle) * radius);
-                      const y = Math.round(Math.sin(angle) * radius);
-                      const completed = isFolderCompleted(folder.id);
-
-                      return (
-                        <button
-                          key={folder.id}
-                          onClick={() => setCurrentView(folder.id)}
-                          style={{ transform: `translate(${x}px, ${y}px)` }}
-                          className="absolute z-20 group flex flex-col items-center transition-all duration-300 hover:scale-110 active:scale-95"
-                        >
-                          <div className={`relative p-3 rounded-2xl ${completed ? folder.color : 'bg-white/90 text-slate-600 border border-slate-100'} shadow-lg ${folder.shadow} transition-all duration-300`}>
-                            <IconComponent size={20} />
-                            {completed && (
-                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-xs">
-                                ✓
-                              </span>
-                            )}
-                          </div>
-                          <span className="mt-1 text-[10px] font-bold text-slate-700 tracking-tight whitespace-nowrap bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full shadow-md shadow-pink-100/40 border border-pink-100/80">
-                            {folder.title}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* 하단 기분 선택 패널 (파스텔 글래스 카드) */}
-                  <div className="bg-white/80 backdrop-blur-xl p-4 rounded-[2rem] shadow-xl shadow-purple-100/40 border border-white/80 mt-auto">
+                  {/* 기분 선택 패널 */}
+                  <div className="bg-white/80 backdrop-blur-xl p-4 rounded-[2rem] shadow-xl shadow-purple-100/40 border border-white/80">
                     <div className="flex items-center justify-between mb-2 px-1">
-                      <span className="text-xs font-bold text-slate-400">오늘의 기분</span>
+                      <span className="text-xs font-bold text-slate-400">선택한 날짜의 기분</span>
                       {todayData.mood && (
                         <span className="text-xs font-bold text-purple-600 bg-purple-50 border border-purple-100 px-3 py-0.5 rounded-full">
                           {MOODS.find(m => m.emoji === todayData.mood)?.label} 선택됨
@@ -720,20 +922,82 @@
                       ))}
                     </div>
                   </div>
-
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col h-full pb-2">
-                  {currentView === 'health' && <HealthView initialData={todayData.health} onSave={(data) => { updateCategoryData('health', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
-                  {currentView === 'study' && <StudyView initialData={todayData.study} onSave={(data) => { updateCategoryData('study', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
-                  {currentView === 'reading' && <ReadingView initialData={todayData.reading} onSave={(data) => { updateCategoryData('reading', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
-                  {currentView === 'exercise' && <ExerciseView initialData={todayData.exercise} onSave={(data) => { updateCategoryData('exercise', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
-                  {currentView === 'review' && <ReviewView initialData={todayData.review} onSave={(data) => { updateCategoryData('review', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
-                  {currentView === 'other' && <OtherView initialData={todayData.other} onSave={(data) => { updateCategoryData('other', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
-                  {currentView === 'youtube' && <YoutubeView initialData={todayData.youtube} onSave={(data) => { updateCategoryData('youtube', data); setCurrentView('main'); }} onBack={() => setCurrentView('main')} />}
                 </div>
               )}
+
+              {/* 날짜 세부 기록 선택 화면 (오비탈 카테고리 레이아웃) */}
+              {currentView === 'detail' && (
+                <div className="flex-1 flex flex-col justify-between py-2">
+                  <button onClick={() => setCurrentView('main')} className="self-start flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors mb-2 group">
+                    <div className="p-1.5 rounded-full bg-white shadow-sm border border-purple-100 group-hover:bg-purple-50 transition-colors"><IconLeft /></div>
+                    달력으로 돌아가기
+                  </button>
+
+                  <div className="relative w-full aspect-square max-w-[320px] max-h-[320px] mx-auto my-auto flex items-center justify-center">
+                    <div className="absolute w-[220px] h-[220px] rounded-full border border-dashed border-indigo-300/60 animate-spin-slow" />
+                    <div className="absolute w-[260px] h-[260px] rounded-full border border-pink-200/50" />
+
+                    <div className="z-10 text-center flex flex-col items-center justify-center p-4 rounded-full bg-white/90 backdrop-blur-xl shadow-xl shadow-purple-200/60 border border-purple-100 w-32 h-32">
+                      <span className="text-3xl font-black text-slate-800 tracking-tight">{completedCount}<span className="text-sm font-bold text-slate-400">/7</span></span>
+                      <span className="text-[11px] font-bold text-indigo-500/80 mt-0.5">완료 항목</span>
+                      <div className="w-12 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 transition-all duration-500" style={{ width: `${(completedCount / 7) * 100}%` }} />
+                      </div>
+                    </div>
+
+                    {folders.map((folder, index) => {
+                      const IconComponent = folder.icon;
+                      const total = folders.length;
+                      const angle = (index * (360 / total) - 90) * (Math.PI / 180);
+                      const radius = 120;
+                      const x = Math.round(Math.cos(angle) * radius);
+                      const y = Math.round(Math.sin(angle) * radius);
+                      const completed = isFolderCompleted(folder.id);
+
+                      return (
+                        <button
+                          key={folder.id}
+                          onClick={() => setCurrentView(folder.id)}
+                          style={{ transform: `translate(${x}px, ${y}px)` }}
+                          className="absolute z-20 group flex flex-col items-center transition-all duration-300 hover:scale-110 active:scale-95"
+                        >
+                          <div className={`relative p-3 rounded-2xl ${completed ? folder.color : 'bg-white/90 text-slate-600 border border-slate-100'} shadow-lg ${folder.shadow} transition-all duration-300`}>
+                            <IconComponent size={20} />
+                            {completed && (
+                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-xs">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <span className="mt-1 text-[10px] font-bold text-slate-700 tracking-tight whitespace-nowrap bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full shadow-md border border-pink-100/80">
+                            {folder.title}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 각 개별 항목 작성 화면 (저장 버튼 누를 시에만 반영, 뒤로가기 시 취소) */}
+              {currentView === 'health' && <HealthView initialData={todayData.health} onSave={(data) => { updateCategoryData('health', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
+              {currentView === 'study' && <StudyView initialData={todayData.study} onSave={(data) => { updateCategoryData('study', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
+              {currentView === 'reading' && <ReadingView initialData={todayData.reading} onSave={(data) => { updateCategoryData('reading', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
+              {currentView === 'exercise' && <ExerciseView initialData={todayData.exercise} onSave={(data) => { updateCategoryData('exercise', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
+              {currentView === 'review' && <ReviewView initialData={todayData.review} onSave={(data) => { updateCategoryData('review', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
+              {currentView === 'other' && <OtherView initialData={todayData.other} onSave={(data) => { updateCategoryData('other', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
+              {currentView === 'youtube' && <YoutubeView initialData={todayData.youtube} onSave={(data) => { updateCategoryData('youtube', data); setCurrentView('detail'); }} onBack={() => setCurrentView('detail')} />}
             </main>
+
+            {/* 설정 모달 */}
+            <SettingsModal
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              pin={savedPin}
+              onSavePin={handleSavePin}
+              sheetUrl={sheetUrl}
+              onSaveSheetUrl={handleSaveSheetUrl}
+            />
           </div>
         </div>
       );
